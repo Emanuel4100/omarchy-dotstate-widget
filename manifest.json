@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "emanuel.dotstate",
+  "name": "Dotstate",
+  "version": "1.0.0",
+  "author": "emanuel",
+  "license": "MIT",
+  "description": "Shows dotstate sync status with its remote: synced, local changes, syncing, or error. Click for details and a manual sync.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "Dotstate",
+    "description": "Dotfiles sync status against the dotstate remote, with a manual Sync Now action.",
+    "category": "Files",
+    "allowMultiple": false,
+    "defaultSection": "right",
+    "defaults": {
+      "refreshIntervalSec": 60
+    },
+    "schema": [
+      {
+        "key": "refreshIntervalSec",
+        "type": "integer",
+        "label": "Refresh interval (seconds)",
+        "min": 10,
+        "max": 3600,
+        "step": 5,
+        "defaultValue": 60
+      }
+    ]
+  }
+}
