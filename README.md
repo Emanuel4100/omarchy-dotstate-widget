@@ -36,8 +36,8 @@ omarchy plugin add https://github.com/Emanuel4100/omarchy-dotstate-widget --enab
 Or manually:
 
 ```
-git clone https://github.com/Emanuel4100/omarchy-dotstate-widget ~/.config/omarchy/plugins/dotstate
-omarchy plugin enable dotstate --section right
+git clone https://github.com/Emanuel4100/omarchy-dotstate-widget ~/.config/omarchy/plugins/emanuel.dotstate
+omarchy plugin enable emanuel.dotstate --section right
 omarchy-shell shell rescanPlugins
 ```
 

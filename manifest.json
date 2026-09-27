@@ -3,9 +3,11 @@
   "id": "emanuel.dotstate",
   "name": "Dotstate",
   "version": "1.0.0",
-  "author": "emanuel",
+  "author": "Emanuel4100",
   "license": "MIT",
   "description": "Shows dotstate sync status with its remote: synced, local changes, syncing, or error. Click for details and a manual sync.",
+  "homepage": "https://github.com/Emanuel4100/omarchy-dotstate-widget",
+  "repository": "https://github.com/Emanuel4100/omarchy-dotstate-widget",
   "kinds": [
     "bar-widget"
   ],
