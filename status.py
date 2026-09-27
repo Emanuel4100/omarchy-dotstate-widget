@@ -17,6 +17,17 @@ ERROR_OR_WARN_RE = re.compile(r"\b(ERROR|WARN)\b")
 SYNC_START_RE = re.compile(r"Starting sync operation")
 SYNC_SUCCESS_RE = re.compile(r"Successfully pushed")
 
+# dotstate keeps its remote token in the URL (https://<token>@github.com/...),
+# and git/dotstate errors echo that URL. Everything this script reports ends up
+# in the popup and in desktop notifications, so strip credentials first.
+URL_CREDENTIALS_RE = re.compile(r"(\b[a-z][a-z0-9+.-]*://)[^/\s@]+@", re.IGNORECASE)
+TOKEN_RE = re.compile(r"\b(gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})")
+
+
+def redact(text):
+  text = URL_CREDENTIALS_RE.sub(r"\1***@", str(text or ""))
+  return TOKEN_RE.sub("***", text)
+
 
 def run(command, cwd=None, timeout=6, env=None):
   try:
@@ -68,11 +79,11 @@ def active_profile_and_issues(doc):
       details = result.get("details")
       issues.append({
         "category": category,
-        "message": result.get("message", ""),
+        "message": redact(result.get("message", "")),
         "status": status,
         "fixable": bool(result.get("fixable", False)),
-        "fixAction": result.get("fix_action", ""),
-        "details": details if isinstance(details, list) else [],
+        "fixAction": redact(result.get("fix_action", "")),
+        "details": [redact(d) for d in details] if isinstance(details, list) else [],
       })
   return active_profile, issues
 
@@ -86,7 +97,7 @@ def dirty_files():
     if len(line) < 4:
       continue
     files.append({
-      "path": line[3:],
+      "path": redact(line[3:]),
       "indexStatus": line[0],
       "worktreeStatus": line[1],
     })
@@ -166,9 +177,9 @@ def main():
     "ahead": ahead,
     "behind": behind,
     "lastRemoteCommitTs": remote_ts,
-    "lastRemoteCommitMsg": remote_msg,
+    "lastRemoteCommitMsg": redact(remote_msg),
     "doctorIssues": doctor_issues,
-    "lastError": last_error,
+    "lastError": redact(last_error),
     "fetched": fetched,
   }))
 

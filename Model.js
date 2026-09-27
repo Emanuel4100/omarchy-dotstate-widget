@@ -8,6 +8,14 @@ function parseStatus(raw) {
   }
 }
 
+// Same rules as status.py's redact(): dotstate's remote URL carries its token,
+// and raw `dotstate sync` / helper stderr can echo it.
+function redact(text) {
+  return String(text || "")
+    .replace(/(\b[a-z][a-z0-9+.-]*:\/\/)[^\/\s@]+@/gi, "$1***@")
+    .replace(/\b(gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})/g, "***")
+}
+
 function relativeTime(iso) {
   if (!iso) return "unknown"
   var then = Date.parse(iso)

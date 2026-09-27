@@ -65,7 +65,7 @@ Item {
   }
 
   function elide(text) {
-    var value = String(text || "").replace(/\s+/g, " ").trim()
+    var value = Model.redact(text).replace(/\s+/g, " ").trim()
     return value.length > 220 ? value.substring(0, 217) + "…" : value
   }
 

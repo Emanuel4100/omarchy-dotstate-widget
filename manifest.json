@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "emanuel.dotstate",
   "name": "Dotstate",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "author": "Emanuel4100",
   "license": "MIT",
   "description": "Shows dotstate sync status with its remote: synced, local changes, syncing, or error. Click for details and a manual sync.",
