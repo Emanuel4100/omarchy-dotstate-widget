@@ -29,8 +29,17 @@ Item {
   // Edge-triggered so a notification fires once per new error, not on every
   // periodic poll while the error persists.
   property bool _wasError: false
+  // Last known "behind" count, so new remote commits notify once each time
+  // a fetch turns up more of them, not on every poll while they're pending.
+  property int _lastBehind: 0
+  // A remote check asked for while another status run was in flight.
+  property bool _fetchPending: false
 
   readonly property int refreshIntervalSec: intSetting("refreshIntervalSec", 60, 10, 3600)
+  // Local status (dirty files, doctor) is cheap and polled often; checking
+  // the remote means a network `git fetch`, so it runs once when the shell
+  // starts (every boot/login) and then on this much slower interval.
+  readonly property int fetchIntervalSec: intSetting("fetchIntervalSec", 3600, 300, 86400)
   // Resolved relative to this file's own location rather than a hardcoded
   // plugin directory name -- `omarchy plugin add` clones by manifest id
   // (e.g. `emanuel.dotstate`), not by this repo's folder name, so a
@@ -60,11 +69,14 @@ Item {
     return value.length > 220 ? value.substring(0, 217) + "…" : value
   }
 
-  function refresh() {
-    if (statusProcess.running) return
+  function refresh(fetchRemote) {
+    if (statusProcess.running) {
+      if (fetchRemote) _fetchPending = true
+      return
+    }
     _statusOutput = ""
     _statusError = ""
-    statusProcess.command = ["python3", helperPath]
+    statusProcess.command = fetchRemote ? ["python3", helperPath, "--fetch"] : ["python3", helperPath]
     statusProcess.running = true
   }
 
@@ -85,6 +97,21 @@ Item {
     doctorIssues = parsed.doctorIssues || []
     lastError = String(parsed.lastError || "")
     noteErrorEdge(state === "error")
+
+    // Offline right after boot is the usual reason a fetch fails; keep
+    // retrying on a short timer until one gets through.
+    if (parsed.fetched === false) fetchRetry.restart()
+    else if (parsed.fetched === true) {
+      fetchRetry.stop()
+      if (behind > _lastBehind) notifyRemoteChanges()
+    }
+    _lastBehind = behind
+  }
+
+  function notifyRemoteChanges() {
+    var body = behind + " new commit" + (behind === 1 ? "" : "s") + " on the remote"
+    if (lastRemoteCommitMsg !== "") body += ": " + elide(lastRemoteCommitMsg)
+    Quickshell.execDetached(["notify-send", "-a", "Dotstate", "Dotstate remote changed", body])
   }
 
   function noteErrorEdge(isError) {
@@ -112,15 +139,32 @@ Item {
     interval: root.refreshIntervalSec * 1000
     repeat: true
     running: true
+    onTriggered: root.refresh(false)
+  }
+
+  // Also covers the first status read at startup, so there's no separate
+  // triggeredOnStart local refresh racing it.
+  Timer {
+    id: fetchTimer
+    interval: root.fetchIntervalSec * 1000
+    repeat: true
+    running: true
     triggeredOnStart: true
-    onTriggered: root.refresh()
+    onTriggered: root.refresh(true)
+  }
+
+  Timer {
+    id: fetchRetry
+    interval: 120 * 1000
+    repeat: false
+    onTriggered: root.refresh(true)
   }
 
   Timer {
     id: postSyncRefresh
     interval: 800
     repeat: false
-    onTriggered: root.refresh()
+    onTriggered: root.refresh(false)
   }
 
   Process {
@@ -136,6 +180,10 @@ Item {
       else {
         root.lastError = root.elide(stderr || "Could not read dotstate status")
         root.noteErrorEdge(true)
+      }
+      if (root._fetchPending) {
+        root._fetchPending = false
+        root.refresh(true)
       }
     }
   }

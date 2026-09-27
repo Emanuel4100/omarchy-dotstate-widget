@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "emanuel.dotstate",
   "name": "Dotstate",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": "Emanuel4100",
   "license": "MIT",
   "description": "Shows dotstate sync status with its remote: synced, local changes, syncing, or error. Click for details and a manual sync.",
@@ -21,7 +21,8 @@
     "allowMultiple": false,
     "defaultSection": "right",
     "defaults": {
-      "refreshIntervalSec": 60
+      "refreshIntervalSec": 60,
+      "fetchIntervalSec": 3600
     },
     "schema": [
       {
@@ -32,6 +33,16 @@
         "max": 3600,
         "step": 5,
         "defaultValue": 60
+      },
+      {
+        "key": "fetchIntervalSec",
+        "type": "integer",
+        "label": "Remote check interval (seconds)",
+        "description": "How often to git fetch and check the remote for new commits. Also runs once at every login.",
+        "min": 300,
+        "max": 86400,
+        "step": 300,
+        "defaultValue": 3600
       }
     ]
   }

@@ -33,7 +33,7 @@ Panel {
   implicitWidth: button.implicitWidth
   implicitHeight: button.implicitHeight
 
-  onOpenedChanged: if (opened) dotstate.refresh()
+  onOpenedChanged: if (opened) dotstate.refresh(false)
 
   Service {
     id: dotstate
@@ -47,7 +47,7 @@ Panel {
     function show(): void { root.open() }
     function hide(): void { root.close() }
     function toggle(): void { root.toggle() }
-    function refresh(): string { dotstate.refresh(); return "ok" }
+    function refresh(): string { dotstate.refresh(true); return "ok" }
     function sync(): string { dotstate.sync(); return "ok" }
     function status(): string { return dotstate.displayState }
   }
@@ -75,7 +75,7 @@ Panel {
       }
     }
     onPressed: function(buttonCode) {
-      if (buttonCode === Qt.RightButton) dotstate.refresh()
+      if (buttonCode === Qt.RightButton) dotstate.refresh(true)
       else root.toggle()
     }
   }
@@ -96,7 +96,7 @@ Panel {
       onCloseRequested: root.close()
       onTabRequested: function(direction) { root.switchPanel(direction) }
       onTextKey: function(t) {
-        if (t === "r" || t === "R") dotstate.refresh()
+        if (t === "r" || t === "R") dotstate.refresh(true)
         else if (t === "s" || t === "S") dotstate.sync()
       }
 

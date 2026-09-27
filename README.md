@@ -9,7 +9,7 @@ sync action.
 
 - Bar icon reflects state at a glance: synced / local changes / syncing / error
 - **Left-click**: open the popup
-- **Right-click**: force a refresh
+- **Right-click**: force a refresh, including a check of the remote
 - Popup shows:
   - Active dotstate profile
   - Ahead/behind commit count vs the remote
@@ -17,6 +17,8 @@ sync action.
   - List of locally changed files
   - Any `dotstate doctor` warnings/errors, with their suggested fix
   - A **Sync Now** button that runs `dotstate sync`
+- Checks the remote for new commits (`git fetch`) at every login and then
+  every hour, and sends a notification when new commits show up
 - Sends a desktop notification the moment a sync error first appears
   (not on every poll)
 
@@ -51,7 +53,8 @@ omarchy plugin update dotstate
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| `refreshIntervalSec` | integer | `60` | How often to poll dotstate status |
+| `refreshIntervalSec` | integer | `60` | How often to poll local dotstate status (no network) |
+| `fetchIntervalSec` | integer | `3600` | How often to `git fetch` and check the remote; also runs once at every login |
 
 ## How it works
 
@@ -60,3 +63,11 @@ omarchy plugin update dotstate
 blob (never reads `dotstate`'s config file directly, since that can contain
 a plaintext remote token). `Service.qml` polls it on a timer and exposes the
 result to `Panel.qml`, which draws the bar icon and popup.
+
+Ahead/behind is measured against `origin/main`, which only moves when
+something fetches. So `status.py --fetch` runs a non-interactive `git fetch`
+first: once when the shell starts (every boot/login), then every
+`fetchIntervalSec`, and on right-click. If the fetch fails (for example no
+network yet right after boot), it's retried every 2 minutes until it
+succeeds. The cheap local poll every `refreshIntervalSec` never touches the
+network.

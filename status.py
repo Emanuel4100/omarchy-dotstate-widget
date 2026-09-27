@@ -1,6 +1,8 @@
 import json
+import os
 import re
 import subprocess
+import sys
 from pathlib import Path
 
 STORAGE = Path.home() / ".config" / "dotstate" / "storage"
@@ -16,9 +18,9 @@ SYNC_START_RE = re.compile(r"Starting sync operation")
 SYNC_SUCCESS_RE = re.compile(r"Successfully pushed")
 
 
-def run(command, cwd=None, timeout=6):
+def run(command, cwd=None, timeout=6, env=None):
   try:
-    completed = subprocess.run(command, cwd=cwd, capture_output=True, text=True, timeout=timeout)
+    completed = subprocess.run(command, cwd=cwd, capture_output=True, text=True, timeout=timeout, env=env)
     return completed.returncode, completed.stdout, completed.stderr
   except (OSError, subprocess.TimeoutExpired):
     return 1, "", ""
@@ -26,6 +28,16 @@ def run(command, cwd=None, timeout=6):
 
 def git(*args):
   return run(["git", "-C", str(STORAGE)] + list(args))
+
+
+def fetch():
+  # Updates origin/main so ahead/behind reflects the real remote, not just
+  # whatever the last `dotstate sync` saw. Never prompts for credentials: a
+  # hung prompt would stall the widget, and failing (offline at boot, say)
+  # just leaves the previous origin/main in place for the caller to retry.
+  env = dict(os.environ, GIT_TERMINAL_PROMPT="0", GIT_SSH_COMMAND="ssh -oBatchMode=yes")
+  code, _, _ = run(["git", "-C", str(STORAGE), "fetch", "--quiet", "origin"], timeout=30, env=env)
+  return code == 0
 
 
 def doctor():
@@ -131,6 +143,7 @@ def last_log_error():
 
 
 def main():
+  fetched = fetch() if "--fetch" in sys.argv[1:] else None
   doc = doctor()
   active_profile, doctor_issues = active_profile_and_issues(doc)
   files = dirty_files()
@@ -156,6 +169,7 @@ def main():
     "lastRemoteCommitMsg": remote_msg,
     "doctorIssues": doctor_issues,
     "lastError": last_error,
+    "fetched": fetched,
   }))
 
 
